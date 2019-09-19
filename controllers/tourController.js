@@ -1,106 +1,92 @@
-const fs = require('fs');
-
-const JSON_FILE_PATH = `${__dirname}/../dev-data/data/tours-simple.json`;
-const tours = JSON.parse(fs.readFileSync(JSON_FILE_PATH));
+const Tour = require('../models/tourModel');
 
 module.exports = {
-  checkID: (req, res, next, val) => {
-    if (!+req.params.id || +req.params.id > tours.length) {
-      return res.status(404).json({
-        data: {
-          message: 'Can not find tour with your id !'
-        },
-        status: 'error'
-      });
-    }
-    next();
-  },
-  checkBody: (req, res, next) => {
-    const { name, price } = req.body;
-    if (!name || !price) {
-      return res.status(400).json({
-        data: {
-          message: 'Missing name or price !'
-        },
-        status: 'error'
-      });
-    }
-    next();
-  },
-  getAllTours: (req, res) => {
-    res.status(200).json({
-      data: {
-        tours
-      },
-      result: tours.length,
-      status: 'success'
-    });
-  },
-  createTour: (req, res) => {
-    const newTourId = tours[tours.length - 1].id + 1;
-    const newTour = Object.assign({ id: newTourId }, req.body);
-    tours.push(newTour);
-
-    fs.writeFile(JSON_FILE_PATH, JSON.stringify(tours), error => {
+  getAllTours: async (req, res) => {
+    try {
+      const tours = await Tour.find();
       res.status(200).json({
         data: {
-          tour: newTour
+          tours
         },
+        result: tours.length,
         status: 'success'
       });
-    });
-  },
-  getTour: (req, res) => {
-    const tour = tours.find(t => +t.id === +req.params.id);
-    if (tour && tour.id) {
-      return res.status(200).json({
-        data: {
-          tour
-        },
-        status: 'success'
+    } catch (error) {
+      res.status(404).json({
+        status: 'fail',
+        message: `Can not get tours!`
       });
     }
-    return res.status(404).json({
-      data: {
-        message: 'Can not find tour with your id !'
-      },
-      status: 'error'
-    });
   },
-  updateTour: (req, res) => {
-    let tour = tours.find(t => +t.id === +req.params.id);
-    if (tour && tour.id) {
+  createTour: async (req, res) => {
+    try {
+      const newTour = await Tour.create(req.body);
+      res.status(200).json({
+        tour: newTour,
+        status: 'success'
+      });
+    } catch (error) {
+      res.status(400).json({
+        status: 'fail',
+        message: `Can not create new tour! Invaild tour data`
+      });
+    }
+  },
+  getTour: async (req, res) => {
+    try {
+      const tour = await Tour.findById(req.params.id);
+      res.status(200).json({
+        tour: tour,
+        status: 'success'
+      });
+    } catch (error) {
+      return res.status(404).json({
+        data: {
+          message: 'Can not find your tour!'
+        },
+        status: 'error'
+      });
+    }
+  },
+  updateTour: async (req, res) => {
+    try {
+      const tourUpdated = await Tour.findByIdAndUpdate(
+        req.params.id,
+        req.body,
+        { new: true, runValidators: true }
+      );
       return res.status(200).json({
         data: {
-          tour
+          tour: tourUpdated,
+          message: 'Tour was updated success!'
         },
         status: 'success'
       });
+    } catch (error) {
+      return res.status(404).json({
+        data: {
+          message: 'Can not find tour with your info to update!'
+        },
+        status: 'error'
+      });
     }
-
-    return res.status(404).json({
-      data: {
-        message: 'Can not find tour with your id to update!'
-      },
-      status: 'error'
-    });
   },
-  deleteTour: (req, res) => {
-    let tour = tours.find(t => +t.id === +req.params.id);
-    if (tour && tour.id) {
+  deleteTour: async (req, res) => {
+    try {
+      await Tour.findByIdAndDelete(req.params.id);
       return res.status(200).json({
         data: {
-          message: 'Delete tour success'
+          message: 'Tour was deleted success!'
         },
         status: 'success'
       });
+    } catch (error) {
+      return res.status(404).json({
+        data: {
+          message: 'Can not find tour with your info to delete!'
+        },
+        status: 'error'
+      });
     }
-
-    return res.status(204).json({
-      data: {
-        message: 'Can not find tour with your id to delete!'
-      },
-      status: 'error'
-    });
   }
 };
