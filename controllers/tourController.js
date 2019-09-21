@@ -1,14 +1,30 @@
 const Tour = require('../models/tourModel');
+const APIFeatures = require('../utils/apiFeatures');
 
 module.exports = {
+  // middleware to set query to filter top 5 tours cheap
+  aliasTopTour: (req, res, next) => {
+    req.query = {
+      limit: '5',
+      sort: '-ratingsAverage,price',
+      fields: 'name,price,ratingsAverage,summary,difficulty'
+    };
+    next();
+  },
   getAllTours: async (req, res) => {
     try {
-      const tours = await Tour.find();
+      const features = new APIFeatures(Tour.find(), req.query)
+        .filter()
+        .sort()
+        .limitFields()
+        .pagination();
+
+      const toursResult = await features.mongoQuery;
       res.status(200).json({
+        result: toursResult.length,
         data: {
-          tours
+          tours: toursResult
         },
-        result: tours.length,
         status: 'success'
       });
     } catch (error) {
