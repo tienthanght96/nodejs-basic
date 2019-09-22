@@ -12,7 +12,7 @@ class APIFeatures {
     // Advance filtering
     let queryString = JSON.stringify(query);
 
-    // Replace gte, gt, lte, lt with operation of mongodb
+    // Replace gte, gt, lte, lt with operators of mongodb
     queryString = queryString.replace(
       /\b(gte|gt|lte|lt)\b/g,
       match => `$${match}`

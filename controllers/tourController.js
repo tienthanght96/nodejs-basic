@@ -60,7 +60,7 @@ module.exports = {
         data: {
           message: 'Can not find your tour!'
         },
-        status: 'error'
+        status: 'fail'
       });
     }
   },
@@ -83,7 +83,7 @@ module.exports = {
         data: {
           message: 'Can not find tour with your info to update!'
         },
-        status: 'error'
+        status: 'fail'
       });
     }
   },
@@ -101,7 +101,104 @@ module.exports = {
         data: {
           message: 'Can not find tour with your info to delete!'
         },
-        status: 'error'
+        status: 'fail'
+      });
+    }
+  },
+  getTourStats: async (req, res) => {
+    try {
+      const stats = await Tour.aggregate([
+        {
+          $match: {
+            ratingsAverage: { $gte: 4.5 }
+          }
+        },
+        {
+          $group: {
+            _id: { $toUpper: '$difficulty' },
+            numTours: { $sum: 1 },
+            numsRating: { $sum: '$ratingsQuantity' },
+            avgRating: { $avg: '$ratingsAverage' },
+            avgPrice: { $avg: '$price' },
+            minPrice: { $min: '$price' },
+            maxPrice: { $max: '$price' }
+          }
+        },
+        {
+          $sort: {
+            avgPrice: 1
+          }
+        }
+        // {
+        //   $match: {
+        //     _id: { $ne: 'EASY' }
+        //   }
+        // }
+      ]);
+      return res.status(200).json({
+        data: { stats },
+        status: 'success'
+      });
+    } catch (error) {
+      return res.status(404).json({
+        message: error,
+        status: 'fail'
+      });
+    }
+  },
+  getMonthlyPlan: async (req, res) => {
+    try {
+      const year = +req.params.year;
+      const plan = await Tour.aggregate([
+        {
+          $unwind: '$startDates'
+        },
+        {
+          $match: {
+            startDates: {
+              $gte: new Date(`${year}-01-01`),
+              $lte: new Date(`${year}-12-31`)
+            }
+          }
+        },
+        {
+          $group: {
+            _id: { $month: '$startDates' },
+            numToursStats: { $sum: 1 },
+            tours: { $push: '$name' }
+          }
+        },
+        {
+          $addFields: {
+            month: '$_id'
+          }
+        },
+        {
+          $project: {
+            _id: 0
+          }
+        },
+        {
+          $sort: {
+            numToursStats: 1
+          }
+        },
+        {
+          $limit: 12
+        }
+      ]);
+
+      return res.status(200).json({
+        result: plan.length,
+        data: {
+          plan
+        },
+        status: 'success'
+      });
+    } catch (error) {
+      return res.status(404).json({
+        message: error,
+        status: 'fail'
       });
     }
   }
