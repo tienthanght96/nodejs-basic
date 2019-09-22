@@ -44,7 +44,7 @@ module.exports = {
     } catch (error) {
       res.status(400).json({
         status: 'fail',
-        message: `Can not create new tour! Invaild tour data`
+        message: error
       });
     }
   },
@@ -129,11 +129,6 @@ module.exports = {
             avgPrice: 1
           }
         }
-        // {
-        //   $match: {
-        //     _id: { $ne: 'EASY' }
-        //   }
-        // }
       ]);
       return res.status(200).json({
         data: { stats },
