@@ -1,7 +1,6 @@
 const Tour = require('../models/tourModel');
-const APIFeatures = require('../utils/apiFeatures');
+const handlerFatory = require('./handlerFactory');
 const catchAsync = require('../utils/catchAsync');
-const AppError = require('../utils/appError');
 
 module.exports = {
   // middleware to set query to filter top 5 tours cheap
@@ -13,67 +12,6 @@ module.exports = {
     };
     next();
   },
-  getAllTours: catchAsync(async (req, res, next) => {
-    const features = new APIFeatures(Tour.find(), req.query)
-      .filter()
-      .sort()
-      .limitFields()
-      .pagination();
-
-    const toursResult = await features.mongoQuery;
-    res.status(200).json({
-      result: toursResult.length,
-      data: {
-        tours: toursResult
-      },
-      status: 'success'
-    });
-  }),
-  createTour: catchAsync(async (req, res, next) => {
-    const newTour = await Tour.create(req.body);
-    res.status(200).json({
-      tour: newTour,
-      status: 'success'
-    });
-  }),
-  getTour: catchAsync(async (req, res, next) => {
-    const tour = await Tour.findById(req.params.id).populate('reviews');
-    if (!tour) {
-      return next(new AppError('No tour found with that ID', 404));
-    }
-    res.status(200).json({
-      tour: tour,
-      status: 'success'
-    });
-  }),
-  updateTour: catchAsync(async (req, res, next) => {
-    const tourUpdated = await Tour.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true
-    });
-    if (!tourUpdated) {
-      return next(new AppError('No tour found with that ID', 404));
-    }
-    return res.status(200).json({
-      data: {
-        tour: tourUpdated,
-        message: 'Tour was updated success!'
-      },
-      status: 'success'
-    });
-  }),
-  deleteTour: catchAsync(async (req, res, next) => {
-    const tour = await Tour.findByIdAndDelete(req.params.id);
-    if (!tour) {
-      return next(new AppError('No tour found with that ID', 404));
-    }
-    return res.status(200).json({
-      data: {
-        message: 'Tour was deleted success!'
-      },
-      status: 'success'
-    });
-  }),
   getTourStats: catchAsync(async (req, res, next) => {
     const stats = await Tour.aggregate([
       {
@@ -151,5 +89,10 @@ module.exports = {
       },
       status: 'success'
     });
-  })
+  }),
+  getAllTours: handlerFatory.getAll(Tour),
+  createTour: handlerFatory.createOne(Tour),
+  getTour: handlerFatory.getOne(Tour, { path: 'reviews' }),
+  updateTour: handlerFatory.updateOne(Tour),
+  deleteTour: handlerFatory.deleteOne(Tour)
 };

@@ -1,24 +1,20 @@
 const Review = require('../models/reviewModel');
-const catchAsync = require('../utils/catchAsync');
+const handlerFatory = require('./handlerFactory');
+// const catchAsync = require('../utils/catchAsync');
 
 module.exports = {
-  getAllReviews: catchAsync(async (req, res) => {
-    const reviewsResult = await Review.find();
-    res.status(200).json({
-      result: reviewsResult.length,
-      data: {
-        reviews: reviewsResult
-      },
-      status: 'success'
-    });
-  }),
-  createNewReview: catchAsync(async (req, res) => {
-    const newReview = await Review.create(req.body);
-    res.status(201).json({
-      data: {
-        review: newReview
-      },
-      status: 'success'
-    });
-  })
+  setTourUserIds(req, res, next) {
+    if (!req.body.tour) {
+      req.body.tour = req.params.tourId;
+    }
+    if (!req.body.user) {
+      req.body.user = req.user.id;
+    }
+    next();
+  },
+  getAllReviews: handlerFatory.getAll(Review),
+  getReview: handlerFatory.getOne(Review),
+  createNewReview: handlerFatory.createOne(Review),
+  updateReview: handlerFatory.updateOne(Review),
+  deleteReview: handlerFatory.deleteOne(Review)
 };
