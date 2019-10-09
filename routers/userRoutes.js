@@ -9,17 +9,18 @@ userRouter.post('/login', authController.login);
 
 userRouter.post('/forgot-password', authController.forgotPassword);
 userRouter.patch('/reset-password/:token', authController.resetPassword);
-userRouter.patch(
-  '/update-password',
-  authController.protect,
-  authController.updatePassword
-);
-userRouter.patch('/update-me', authController.protect, userController.updateMe);
-userRouter.delete(
-  '/delete-me',
-  authController.protect,
-  userController.deleteMe
-);
+
+// Protect all routes after this middleware
+userRouter.use(authController.protect);
+
+userRouter.patch('/update-password', authController.updatePassword);
+
+userRouter.get('/me', userController.getMe, userController.getUser);
+userRouter.patch('/update-me', userController.updateMe);
+userRouter.delete('/delete-me', userController.deleteMe);
+
+// Protect all routes for admin role after this middleware
+userRouter.use(authController.restrictTo('admin'));
 
 userRouter.route('/').get(userController.getAllUsers);
 

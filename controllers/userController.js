@@ -14,6 +14,10 @@ function filterObject(obj, ...allowedFields) {
 }
 
 module.exports = {
+  getMe: (req, res, next) => {
+    req.params.id = req.user.id;
+    next();
+  },
   updateMe: catchAsync(async (req, res, next) => {
     // Error if user post password data
     const { password, passwordConfirm } = req.body;
