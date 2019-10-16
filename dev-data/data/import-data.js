@@ -7,7 +7,7 @@ const User = require('../../models/userModel');
 
 dotenv.config({ path: './config.env' });
 
-const DATABASE_URI = process.env.DATABASE_URI_LOCAL;
+const { DATABASE_URI } = process.env;
 
 mongoose
   .connect(DATABASE_URI, {
