@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const hpp = require('hpp');
+const cookieParser = require('cookie-parser');
 
 const tourRouter = require('./routers/tourRoutes');
 const userRouter = require('./routers/userRoutes');
@@ -22,16 +23,6 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Set Security HTTP Header
 app.use(helmet());
-
-// Dev Logging
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
-  app.use((req, res, next) => {
-    // eslint-disable-next-line no-console
-    console.log('Hello this is custom middleware...');
-    next();
-  });
-}
 
 // Limit 100 request in an hours from one IP
 const limiter = rateLimit({
@@ -63,12 +54,24 @@ app.use(
 // Body Parse
 app.use(express.json({ limit: '10kb' }));
 
+// Cookie parse
+app.use(cookieParser());
+
 // Serving static file
 // app.use(express.static(`${__dirname}/public`));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Routes
+// Dev Logging
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+  app.use((req, res, next) => {
+    // eslint-disable-next-line no-console
+    console.log('Hello this is custom middleware...');
+    next();
+  });
+}
 
+// Routes
 app.use('/', viewRouter);
 app.use('/api', limiter);
 app.use('/api/v1/tours', tourRouter);

@@ -20,5 +20,10 @@ module.exports = {
       tour,
       title: tour.name
     });
+  }),
+  getLoginForm: catchAsync(async (req, res, next) => {
+    res.status(200).render('login', {
+      title: 'Login into your account'
+    });
   })
 };

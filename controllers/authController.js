@@ -57,6 +57,15 @@ module.exports = {
     }
     createSendToken(user, 200, res);
   }),
+  logout: (req, res) => {
+    res.cookie('jwt', '', {
+      expires: new Date(Date.now() + 10 * 1000),
+      httpOnly: true
+    });
+    res.status(200).json({
+      status: 'success'
+    });
+  },
   protect: catchAsync(async (req, res, next) => {
     // Get token
     let token = null;
@@ -64,6 +73,8 @@ module.exports = {
 
     if (authorization && authorization.startsWith('Bearer')) {
       token = authorization.split(' ')[1];
+    } else if (req.cookies.jwt) {
+      token = req.cookies.jwt;
     }
     if (!token) {
       return next(
@@ -93,6 +104,39 @@ module.exports = {
 
     next();
   }),
+  // Only for rendered pages, no errors
+  isLoggedIn: async (req, res, next) => {
+    try {
+      if (req.cookies.jwt) {
+        const token = req.cookies.jwt;
+
+        // Verification token
+        const decoded = await promisify(jwt.verify)(
+          token,
+          process.env.JWT_SECRET
+        );
+
+        // Check user still exits or was deleted
+        const freshUser = await User.findById(decoded.id);
+        if (!freshUser) {
+          return next();
+        }
+
+        // Check if user changed password after token was issued
+        if (freshUser.changePasswordAfter(decoded.iat)) {
+          return next();
+        }
+
+        // There is a logged in user
+        // res.locals will be used in pug template
+        res.locals.user = freshUser;
+        return next();
+      }
+      next();
+    } catch (error) {
+      next();
+    }
+  },
   restrictTo: (...roles) => {
     // roles: ['user', 'guide', 'lead-guide', 'admin']
     return (req, res, next) => {
