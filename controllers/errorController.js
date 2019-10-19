@@ -1,32 +1,57 @@
 const AppError = require('../utils/appError');
 
-const sendErrorDev = (error, res) => {
-  res.status(error.statusCode).json({
-    status: error.status,
-    error: error,
-    message: error.message,
-    stack: error.stack
+const sendErrorDev = (error, req, res) => {
+  // A) API
+  if (req.originalUrl.startsWith('/api')) {
+    return res.status(error.statusCode).json({
+      status: error.status,
+      error: error,
+      message: error.message,
+      stack: error.stack
+    });
+  }
+
+  // B) RENDERED WEBSITE
+  // console.error('ERROR 💥', error);
+  return res.status(error.statusCode).render('error', {
+    title: 'Something went wrong!',
+    msg: error.message
   });
 };
 
-const sendErrorProduction = (error, res) => {
-  // Operational, trusted error: send message to client
-  if (error.isOperational) {
-    res.status(error.statusCode).json({
-      status: error.status,
-      message: error.message
-    });
-  } else {
+const sendErrorProduction = (error, req, res) => {
+  // A) API
+  if (req.originalUrl.startsWith('/api')) {
+    // Operational, trusted error: send message to client
+    if (error.isOperational) {
+      return res.status(error.statusCode).json({
+        status: error.status,
+        message: error.message
+      });
+    }
     // 1) Log error
     // eslint-disable-next-line no-console
     console.error('ERROR 💥', error);
 
     // 2) Send generic message
-    res.status(500).json({
+    return res.status(500).json({
       status: 'error',
       message: 'Something went very wrong!'
     });
   }
+  // RENDERED WEBSITE
+  // Operational, trusted error: send message to client
+  if (error.isOperational) {
+    return res.status(error.statusCode).render('error', {
+      title: 'Something went wrong!',
+      msg: error.message
+    });
+  }
+
+  return res.status(error.statusCode).render('error', {
+    title: 'Something went wrong!',
+    msg: 'Please try again later.'
+  });
 };
 
 // Handle Cast Error from DB
@@ -62,9 +87,10 @@ module.exports = (err, req, res, next) => {
   err.status = err.status || 'error';
 
   if (process.env.NODE_ENV === 'development') {
-    sendErrorDev(err, res);
+    sendErrorDev(err, req, res);
   } else if (process.env.NODE_ENV === 'production') {
     let error = { ...err };
+    error.message = err.message;
 
     if (error.name === 'CastError') {
       error = handleCastErrorDB(error);
@@ -82,6 +108,6 @@ module.exports = (err, req, res, next) => {
       error = handleJWTExpiredError();
     }
 
-    sendErrorProduction(error, res);
+    sendErrorProduction(error, req, res);
   }
 };

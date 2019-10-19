@@ -101,7 +101,7 @@ module.exports = {
     }
 
     req.user = freshUser;
-
+    res.locals.user = freshUser;
     next();
   }),
   // Only for rendered pages, no errors
