@@ -17,7 +17,12 @@ userRouter.use(authController.protect);
 userRouter.patch('/update-password', authController.updatePassword);
 
 userRouter.get('/me', userController.getMe, userController.getUser);
-userRouter.patch('/update-me', userController.updateMe);
+userRouter.patch(
+  '/update-me',
+  userController.uploadPhoto,
+  userController.resizeUserPhoto,
+  userController.updateMe
+);
 userRouter.delete('/delete-me', userController.deleteMe);
 
 // Protect all routes for admin role after this middleware
