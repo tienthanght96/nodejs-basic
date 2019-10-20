@@ -42,19 +42,19 @@ function filterObject(obj, ...allowedFields) {
 
 module.exports = {
   uploadPhoto: upload.single('photo'),
-  resizeUserPhoto: (req, res, next) => {
+  resizeUserPhoto: catchAsync(async (req, res, next) => {
     if (!req.file) {
       return next();
     }
     const filename = `user-${req.user.id}-${Date.now()}.jpeg`;
     req.file.filename = filename;
-    sharp(req.file.buffer)
+    await sharp(req.file.buffer)
       .resize(500, 500)
       .toFormat('jpeg')
       .jpeg({ quality: 90 })
       .toFile(`public/img/users/${filename}`);
     next();
-  },
+  }),
   getMe: (req, res, next) => {
     req.params.id = req.user.id;
     next();
