@@ -5,13 +5,10 @@ import { alertMessage } from './alert';
 export const login = async (email, password) => {
   try {
     console.log({ email, password });
-    const response = await axios.post(
-      'http://localhost:3000/api/v1/users/login',
-      {
-        email: email,
-        password: password
-      }
-    );
+    const response = await axios.post('/api/v1/users/login', {
+      email: email,
+      password: password
+    });
     if (response.data.status === 'success') {
       alertMessage('success', 'Login success!');
       window.setTimeout(() => {
@@ -25,9 +22,7 @@ export const login = async (email, password) => {
 
 export const logout = async () => {
   try {
-    const response = await axios.post(
-      'http://localhost:3000/api/v1/users/logout'
-    );
+    const response = await axios.post('/api/v1/users/logout');
     if (response.data.status === 'success') {
       location.reload();
     }
